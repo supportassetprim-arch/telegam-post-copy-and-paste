@@ -1,6 +1,7 @@
 import os
 import asyncio
 import threading
+import re  # Notun library add kora hoyeche text clean korar jonno
 from flask import Flask
 from telethon.sync import TelegramClient
 from telethon.sessions import StringSession
@@ -12,33 +13,41 @@ app = Flask(__name__)
 
 @app.route('/')
 def home():
-    return "🚀 Telegram Multi-Channel Auto Poster is Running 24/7!"
+    return "🚀 Telegram Multi-Channel Auto Poster is Running 24/7 (Link Filter Enabled)!"
 
 def run_flask():
     port = int(os.environ.get("PORT", 8000))
     app.run(host="0.0.0.0", port=port)
 
 # ==========================================
-# 2. TELEGRAM BOT LOGIC
+# 2. TEXT CLEANER FUNCTION
+# ==========================================
+def clean_message_text(text):
+    if not text:
+        return ""
+    # 1. Shob dhoroner Link/URL muche felbe (http, https, www, t.me)
+    text = re.sub(r'https?://\S+|www\.\S+|t\.me/\S+', '', text)
+    # 2. @ diye shuru howa username muche felbe
+    text = re.sub(r'@\w+', '', text)
+    # 3. Faka line ba extra space gulo thik korbe
+    text = re.sub(r'\n\s*\n', '\n', text).strip()
+    return text
+
+# ==========================================
+# 3. TELEGRAM BOT LOGIC
 # ==========================================
 API_ID = int(os.environ.get('API_ID', 0))
 API_HASH = os.environ.get('API_HASH', '')
 SESSION_STRING = os.environ.get('SESSION_STRING', '')
-
-# Ekhon amra CHANNEL_PAIRS use korbo (E.g. "@source1:@dest1, @source2:@dest2")
 CHANNEL_PAIRS = os.environ.get('CHANNEL_PAIRS', '')
 DAILY_LIMIT = int(os.environ.get('DAILY_LIMIT', 10))
 
-# Protita channel pair er jonno alada worker
 async def channel_worker(client, source, dest, delay_seconds, state_msg_id, last_msg_id):
     is_first_run = (last_msg_id == 0)
-    
-    # Eka sathe shob channel start hole block khete pare, tai ektu random wait kora hocche
     await asyncio.sleep(2) 
 
     while True:
         try:
-            # First run e 10 ta, pore 5 ta kore check korbe
             limit_count = 10 if is_first_run else 5
             messages = await client.get_messages(source, limit=limit_count)
             
@@ -48,19 +57,26 @@ async def channel_worker(client, source, dest, delay_seconds, state_msg_id, last
                     if msg.text or msg.media:
                         print(f"[{source} ➡️ {dest}] 🔄 Processing MSG ID: {msg.id}")
                         
+                        # Text filter kora hochche (Link o Username bad deya)
+                        cleaned_text = clean_message_text(msg.text)
+                        
+                        # Jodi shob link katar por text ektuo na thake, kintu chobi/video thake
                         if msg.media:
                             print(f"[{source}] 📥 Downloading media...")
                             file_path = await client.download_media(msg)
-                            await client.send_message(dest, msg.text or "", file=file_path)
+                            await client.send_message(dest, cleaned_text, file=file_path)
                             os.remove(file_path)
+                            print(f"[{source} ➡️ {dest}] ✅ Success: Media Posted!")
                         else:
-                            await client.send_message(dest, msg.text)
-                            
-                        print(f"[{source} ➡️ {dest}] ✅ Success: Posted!")
+                            # Shudhu text thakle obossoi text thakte hobe (empty message pathano jay na)
+                            if cleaned_text:
+                                await client.send_message(dest, cleaned_text)
+                                print(f"[{source} ➡️ {dest}] ✅ Success: Text Posted!")
+                            else:
+                                print(f"[{source} ➡️ {dest}] ⚠️ Skipped: Link/Username katar por kono text chilo na.")
                         
                         last_msg_id = msg.id
                         
-                        # Save state explicitly for this source channel
                         state_text = f"AutoPoster_State_{source}: {last_msg_id}"
                         if state_msg_id:
                             await client.edit_message('me', state_msg_id, state_text)
@@ -68,19 +84,17 @@ async def channel_worker(client, source, dest, delay_seconds, state_msg_id, last
                             state_msg = await client.send_message('me', state_text)
                             state_msg_id = state_msg.id
                         
-                        # Delay logic
                         if is_first_run:
-                            await asyncio.sleep(3) # First run e 3 sec gap
+                            await asyncio.sleep(3)
                         else:
                             print(f"[{source}] 💤 Waiting {delay_seconds / 3600:.2f} hours for next post...")
                             await asyncio.sleep(delay_seconds)
             
             if is_first_run:
                 is_first_run = False
-                print(f"\n🎉 [{source}] First run complete! Ebar schedule onujayi cholbe.\n")
+                print(f"\n🎉 [{source}] First run complete!\n")
                 await asyncio.sleep(delay_seconds)
             else:
-                # Notun kono post na thakle 5 min por abar check korbe
                 await asyncio.sleep(300)
 
         except Exception as e:
@@ -96,7 +110,6 @@ async def telegram_bot():
     await client.start()
     print("✅ Telegram Logged in Successfully!")
 
-    # Parse Channel Pairs
     pairs = []
     for pair in CHANNEL_PAIRS.split(','):
         if ':' in pair:
@@ -109,9 +122,7 @@ async def telegram_bot():
 
     delay_seconds = 86400 / DAILY_LIMIT
     print(f"📊 Daily Limit: {DAILY_LIMIT} Posts per channel")
-    print(f"⏳ Normal gap between posts: {delay_seconds / 3600:.2f} Ghonta")
 
-    # Fetch all saved states from 'Saved Messages'
     print("🔍 Checking Saved Messages for last states...")
     saved_states = {}
     async for msg in client.iter_messages('me', search='AutoPoster_State_'):
@@ -125,22 +136,18 @@ async def telegram_bot():
         except:
             pass
 
-    # Protita channel-er pair er jonno ekta kore task toiri kora hocche
     tasks = []
     for source, dest in pairs:
         state = saved_states.get(source, {'last_id': 0, 'msg_id': None})
-        print(f"🚀 Starting worker for {source} ➡️ {dest} (Last ID: {state['last_id']})")
-        
         task = asyncio.create_task(
             channel_worker(client, source, dest, delay_seconds, state['msg_id'], state['last_id'])
         )
         tasks.append(task)
     
-    # Shob worker guloke aksathe run korano hocche
     await asyncio.gather(*tasks)
 
 # ==========================================
-# 3. SCRIPT START
+# 4. SCRIPT START
 # ==========================================
 if __name__ == '__main__':
     threading.Thread(target=run_flask, daemon=True).start()
