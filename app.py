@@ -64,7 +64,7 @@ async def telegram_bot():
 
     while True:
         try:
-            limit_count = 2 if is_first_run else 5
+            limit_count = 4 if is_first_run else 5
             messages = await client.get_messages(SOURCE_CHANNEL, limit=limit_count)
             
             for msg in reversed(messages):
