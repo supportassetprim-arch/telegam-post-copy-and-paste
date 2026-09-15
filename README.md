@@ -1,55 +1,55 @@
 # 🚀 Telegram Multi-Channel Auto Poster 24/7
 
-Eta ekta advanced Telegram Auto Poster bot, jeta ek ba ekadhik "Source Channel" theke text ebong media hoboho copy kore apnar "Destination Channel"-e schedule onujayi auto-post kore. Eti Render.com ebong UptimeRobot babohar kore 24 ghonta (24/7) completely free-te cholar jonno toiri kora hoyeche.
+This is an advanced Telegram Auto Poster bot that flawlessly copies text and media from one or more "Source Channels" and automatically posts them to your "Destination Channel(s)" based on a predefined schedule. It is built to run 24/7 completely free of charge using Render.com and UptimeRobot.
 
-## ✨ Features (Ki ki thakche)
+## ✨ Features
 
-* 🔄 **Multi-Channel Support:** Eksathe onek gulo channel theke copy kore onno onno channel-e post korar subidha.
-* 🚫 **Restriction Bypass:** Source channel-e "Copy/Forward Restricted" thakleo eti media download kore apnar channel-e completely notun post hisabe upload korbe.
-* 🔗 **Link & Username Filter:** Source post theke shob dhoroner website link (http, t.me) ebong username tag (`@username`) automatically muche felbe.
-* 🛡️ **Anti-Duplicate System:** Server kono karone restart nileo apnar Telegram-er "Saved Messages"-e ID save thakar karone ekoi post 2 bar kokhonoi hobe na.
-* ⏱️ **Smart Schedule (Daily Limit):** Dine koyta post hobe ta set kore dile, script auto time calculate kore (e.g., 2.4 ghonta por por) post korbe.
-* 🚀 **First Run Burst:** Prothom bar chalu hole ba reset korle aksathe 10 ti post copy korbe.
-* 🌐 **24/7 Live Web Server:** Flask web server deya ache jeta UptimeRobot theke ping receive kore Render ke ghumate dey na.
+* 🔄 **Multi-Channel Support:** Simultaneously copy from multiple source channels and route them to their respective destination channels.
+* 🚫 **Restriction Bypass:** Even if a source channel has "Copy/Forwarding Restricted" enabled, the bot will secretly download the media and upload it to your channel as a completely new post.
+* 🔗 **Link & Username Filter:** Automatically removes all website links (http, https, www, t.me) and username tags (`@username`) from the copied source text.
+* 🛡️ **Anti-Duplicate System:** Saves the last processed message ID in your Telegram "Saved Messages". If the server restarts, it picks up right where it left off, ensuring a post is never duplicated.
+* ⏱️ **Smart Schedule (Daily Limit):** Set your desired number of posts per day, and the script will automatically calculate the delay (e.g., every 2.4 hours) between each post.
+* 🚀 **First Run Burst:** Instantly copies and posts 10 messages during its very first run (or when reset) before switching to the daily schedule.
+* 🌐 **24/7 Live Web Server:** Features a built-in Flask web server that receives pings from UptimeRobot, preventing the Render server from going to sleep.
 
 ---
 
-## 🛠️ Deployment Guide (Kivabe Setup Korben)
+## 🛠️ Deployment Guide
 
-### Step 1: GitHub-e Files Upload
-Apnar GitHub repository-te obosshoi ei duti file thakte hobe:
-1. `app.py` (Main bot code)
-2. `requirements.txt` (telethon, flask etc. library-r nam)
+### Step 1: Upload Files to GitHub
+Make sure you have the following two files in your GitHub repository:
+1. `app.py` (The main bot script)
+2. `requirements.txt` (List of dependencies: telethon, flask, etc.)
 
-### Step 2: Render.com e Deploy
-1. **Render.com**-e giye notun ekta **"Web Service"** toiri korun.
-2. Apnar GitHub repository connect korun.
-3. Build Command: `pip install -r requirements.txt`
-4. Start Command: `python app.py`
+### Step 2: Deploy to Render.com
+1. Go to **Render.com** and create a new **"Web Service"**.
+2. Connect your GitHub repository.
+3. **Build Command:** `pip install -r requirements.txt`
+4. **Start Command:** `python app.py`
 
-### Step 3: Environment Variables Set Kora
-Render-er **Environment Variables** section-e giye nicher Key gulo add korun:
+### Step 3: Set Environment Variables
+Go to the **Environment Variables** section of your Render Web Service and add the following keys:
 
 | Key | Value (Example) | Details |
 | :--- | :--- | :--- |
-| `API_ID` | `1234567` | Apnar my.telegram.org theke pawa API ID. |
-| `API_HASH` | `a1b2c3d4e5...` | Apnar API Hash. |
-| `SESSION_STRING` | `1Bjw...` | Local PC ba Colab theke generate kora String Session. |
-| `CHANNEL_PAIRS` | `@source1:@dest1, @source2:@dest2` | Source ebong target channel-er nam (comma diye ekadhik add kora jabe). |
-| `DAILY_LIMIT` | `10` | Proti channel-e dine koyta post hobe tar limit. |
+| `API_ID` | `1234567` | Your API ID from my.telegram.org. |
+| `API_HASH` | `a1b2c3d4e5...` | Your API Hash. |
+| `SESSION_STRING` | `1Bjw...` | The String Session generated locally or on Colab. |
+| `CHANNEL_PAIRS` | `@source1:@dest1, @source2:@dest2` | Source and destination channels separated by a colon, pairs separated by commas. |
+| `DAILY_LIMIT` | `10` | The maximum number of posts you want to publish per channel per day. |
 
-### Step 4: UptimeRobot (24/7 Live)
-1. Deploy hoye gele Render theke ekta URL paben (jemon: `https://telegam-post-copy-and-paste.onrender.com`).
-2. **UptimeRobot.com** e giye ekta HTTP Monitor toiri korun.
-3. Render-er link-ti diye 5 minute-er interval set kore din. 
-*(Bas! Apnar bot ekhon theke 24/7 nonstop cholte thakbe)*
+### Step 4: UptimeRobot (Keep it alive 24/7)
+1. Once deployed, copy your Render web URL (e.g., `https://telegam-post-copy-and-paste.onrender.com`).
+2. Go to **UptimeRobot.com** and create a new **HTTP Monitor**.
+3. Paste your Render URL and set a **5-minute interval**. 
+*(That's it! Your bot will now run continuously in the background).*
 
 ---
 
-## 💡 Kichu Zaroori Tips
+## 💡 Important Tips
 
-* **Reset First Run:** Bot jodi abar prothom theke notun kore 10 ta post korate chan, tahole apnar Telegram account-er **"Saved Messages"** e giye `AutoPoster_State_...` lekha message gulo delete kore Render-ti restart (Manual Deploy) din.
-* **Large Media Files:** Beshi boro size-er video download/upload hote Render-er free server-e ektu beshi shomoy lagte pare. Normal photo, text ebong choto video-r jonno perfect.
+* **Reset First Run:** If you want to force the bot to do a "10-post burst" again, go to your Telegram app's **"Saved Messages"**, delete the messages starting with `AutoPoster_State_...`, and hit **"Manual Deploy"** (Restart) on Render.
+* **Large Media Files:** Keep in mind that downloading and uploading very large video files might take a bit longer on Render's free tier. It works perfectly and quickly for photos, text, and normal-sized videos.
 
 ---
 **Developed with ❤️ using Python (Telethon & Flask)**
